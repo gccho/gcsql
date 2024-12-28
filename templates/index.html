@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SQL 테스트 관리자 페이지</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+        }
+        
+        .conversation-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .conversation-table th, .conversation-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .conversation-table th {
+            background-color: #f4f4f4;
+        }
+        
+        .conversation-table tr:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+        
+        .conversation-table tr:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .score-cell {
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .date-cell {
+            white-space: nowrap;
+        }
+        
+        .user-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-decoration: none;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+        }
+        
+        .conversation-detail {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-height: 80vh;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .conversation-detail pre {
+            white-space: pre-wrap;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: none;
+            background: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>SQL 테스트 결과 관리</h1>
+    <a href="{{ url_for('user') }}" class="user-link">사용자 페이지로 이동</a>
+    
+    <table class="conversation-table">
+        <thead>
+            <tr>
+                <th>질문</th>
+                <th>점수</th>
+                <th>날짜</th>
+            </tr>
+        </thead>
+        <tbody id="conversation-list">
+            <!-- Conversations will be inserted here -->
+        </tbody>
+    </table>
+
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+    <div id="conversation-detail" class="conversation-detail">
+        <button class="close-button" onclick="closeDetail()">×</button>
+        <h2>대화 상세</h2>
+        <div id="detail-content"></div>
+    </div>
+
+    <script>
+        function loadConversations() {
+            fetch('/get_conversations')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('conversation-list');
+                    tbody.innerHTML = '';
+                    
+                    data.conversations.forEach(conv => {
+                        const row = document.createElement('tr');
+                        row.style.cursor = 'pointer';
+                        row.innerHTML = `
+                            <td>${conv.question}</td>
+                            <td class="score-cell">${conv.score}</td>
+                            <td class="date-cell">${new Date(conv.date).toLocaleString()}</td>
+                        `;
+                        row.onclick = () => showConversationDetail(conv);
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function showConversationDetail(conv) {
+            const detailContent = document.getElementById('detail-content');
+            detailContent.innerHTML = `
+                <h3>질문:</h3>
+                <pre>${conv.question}</pre>
+                
+                <h3>답변:</h3>
+                <pre>${conv.answer}</pre>
+                
+                <h3>피드백:</h3>
+                <pre>${conv.feedback}</pre>
+                
+                <p><strong>점수:</strong> ${conv.score}점</p>
+                <p><strong>날짜:</strong> ${new Date(conv.date).toLocaleString()}</p>
+            `;
+            
+            document.getElementById('modal-backdrop').style.display = 'block';
+            document.getElementById('conversation-detail').style.display = 'block';
+        }
+
+        function closeDetail() {
+            document.getElementById('modal-backdrop').style.display = 'none';
+            document.getElementById('conversation-detail').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('modal-backdrop').onclick = closeDetail;
+
+        // Load conversations when page loads
+        loadConversations();
+        
+        // Refresh every 30 seconds
+        setInterval(loadConversations, 30000);
+    </script>
+</body>
+</html> 

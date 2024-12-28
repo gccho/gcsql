@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SQL 테스트 사용자 페이지</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            display: flex;
+            min-height: 100vh;
+        }
+        .admin-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-decoration: none;
+            padding: 10px 20px;
+            background-color: #f0f0f0;
+            color: #333;
+            border-radius: 5px;
+        }
+        
+        .header-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-button {
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .start-button {
+            background-color: #4CAF50;
+        }
+
+        .new-chat-button {
+            background-color: #2196F3;
+        }
+
+        /* Left sidebar for question history */
+        .question-history {
+            width: 250px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        .history-item:hover {
+            background-color: #e9ecef;
+        }
+
+        /* Main chat container */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            margin-right: 300px;
+        }
+        #chat-container {
+            width: 100%;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+        #chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #eee;
+        }
+
+        /* Right sidebar for sample tables */
+        .sample-tables {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100vh;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-left: 1px solid #dee2e6;
+            overflow-y: auto;
+            z-index: 99;
+        }
+        .table-reference {
+            margin-bottom: 20px;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .table-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2196F3;
+            font-size: 1.1em;
+        }
+        .table-schema {
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            line-height: 1.5;
+        }
+
+        /* Existing styles */
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: 20%;
+        }
+        .bot-message {
+            background-color: #f5f5f5;
+            margin-right: 20%;
+        }
+
+        #user-input {
+            font-family: monospace;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            white-space: pre;
+            overflow-y: auto;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+
+        .table-sample {
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+        
+        .sample-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+            margin-top: 8px;
+        }
+        
+        .sample-data-table th,
+        .sample-data-table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: left;
+        }
+        
+        .sample-data-table th {
+            background-color: #f0f0f0;
+        }
+        
+        .sample-data-table tr:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Sidebar toggle buttons */
+        .sidebar-toggle {
+            position: fixed;
+            background: #2196F3;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 60px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            z-index: 100;
+        }
+
+        .history-toggle {
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 0 5px 5px 0;
+        }
+
+        .schema-toggle {
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 5px 0 0 5px;
+        }
+
+        /* Sidebar transitions */
+        .question-history {
+            position: fixed;
+            left: -250px;
+            transition: left 0.3s ease;
+            background: white;
+            z-index: 99;
+        }
+
+        .question-history.active {
+            left: 0;
+        }
+
+        .sample-tables {
+            position: fixed;
+            right: -300px;
+            transition: right 0.3s ease;
+            background: white;
+            z-index: 99;
+        }
+
+        .sample-tables.active {
+            right: 0;
+        }
+
+        /* Adjust main content for sidebars */
+        .main-content {
+            transition: margin 0.3s ease;
+        }
+
+        .main-content.history-active {
+            margin-left: 250px;
+        }
+
+        .main-content.schema-active {
+            margin-right: 300px;
+        }
+
+        .content-wrapper {
+            display: flex;
+            gap: 20px;
+        }
+
+        .chat-section {
+            flex: 1;
+        }
+
+        .schema-section {
+            width: 300px;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-history">
+        <h3>질문 기록</h3>
+        <div id="history-list"></div>
+    </div>
+
+    <div class="main-content">
+        <div class="header-container">
+            <h1>SQL TEST</h1>
+            <div class="header-buttons">
+                <button class="header-button start-button" onclick="startTest()">테스트 시작</button>
+                <button class="header-button new-chat-button" onclick="refreshChat()">새 채팅으로</button>
+                <a href="{{ url_for('index') }}" class="admin-link">관리자 페이지로 이동</a>
+            </div>
+        </div>
+        
+        <div id="chat-container">
+            <div id="chat-messages"></div>
+            <div id="loading" class="loading">
+                <span class="loading-spinner"></span>
+                답변을 생성중입니다...
+            </div>
+            <div id="chat-input">
+                <textarea id="user-input" 
+                    placeholder="SQL 답변을 입력하세요... (Shift + Enter로 줄바꿈, Enter로 전송)" 
+                    style="width: 80%; min-height: 60px; resize: vertical; padding: 10px;"
+                ></textarea>
+                <button onclick="sendMessage()" style="vertical-align: top;">전송</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="sample-tables">
+        <h3>테이블 스키마 및 샘플 데이터</h3>
+        <div id="current-tables" class="table-reference">
+            <!-- Tables will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <button class="sidebar-toggle history-toggle" onclick="toggleHistory()">&gt;</button>
+    <button class="sidebar-toggle schema-toggle" onclick="toggleSchema()">&lt;</button>
+
+    <script>
+        let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        let currentQuestion = '';
+        let currentAnswer = '';
+
+        function startTest() {
+            fetch('/start_test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage("SQL 테스트를 시작합니다.", 'bot');
+                currentQuestion = data.question;
+                addMessage(data.question, 'bot');
+                addToHistory(data.question, data.answer);
+                updateTableSchemas(data.tables, data.sample_data);
+            })
+            .catch(error => {
+                addMessage('Error: ' + error, 'bot');
+            });
+        }
+
+        function addToHistory(question, answer = null, botResponse = null) {
+            const timestamp = new Date().toISOString();
+            const historyItem = {
+                time: timestamp,
+                question: question,
+                answer: answer,
+                botResponse: botResponse,
+                tables: document.getElementById('current-tables').innerHTML
+            };
+            
+            chatHistory.unshift(historyItem);
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            updateHistoryList();
+        }
+
+        function updateHistoryList() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            chatHistory.forEach((item, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.classList.add('history-item');
+                historyItem.textContent = `${item.time}: ${item.question}`;
+                historyItem.onclick = () => showFullQuestion(item);
+                historyList.appendChild(historyItem);
+            });
+        }
+
+        function showFullQuestion(historyItem) {
+            refreshChat();
+            document.getElementById('current-tables').innerHTML = historyItem.tables;
+            addMessage(historyItem.question, 'bot');
+            if (historyItem.answer) {
+                addMessage(historyItem.answer, 'user');
+                if (historyItem.botResponse) {
+                    addMessage(historyItem.botResponse, 'bot');
+                }
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            currentAnswer = message;
+            addMessage(message, 'user');
+            input.value = '';
+            input.style.height = 'auto';
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    message: message,
+                    current_question: currentQuestion
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading
+                document.getElementById('loading').style.display = 'none';
+                
+                if (data.error) {
+                    addMessage('Error: ' + data.error, 'bot');
+                } else {
+                    addMessage(data.response, 'bot');
+                    addToHistory(currentQuestion, message, data.response);
+                }
+            })
+            .catch(error => {
+                // Hide loading
+                document.getElementById('loading').style.display = 'none';
+                addMessage('Error: ' + error, 'bot');
+            });
+        }
+
+        function addMessage(message, sender) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender + '-message');
+            
+            messageElement.textContent = message;
+            
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function refreshChat() {
+            document.getElementById('chat-messages').innerHTML = '';
+            document.getElementById('user-input').value = '';
+        }
+
+        document.getElementById('user-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            } else if (e.key === 'Enter' && e.shiftKey) {
+            }
+            
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        function updateTableSchemas(tablesSchema, sampleData) {
+            const tablesContainer = document.getElementById('current-tables');
+            tablesContainer.innerHTML = '';
+            
+            const tableDefinitions = tablesSchema.trim().split('\n\n');
+            
+            tableDefinitions.forEach(tableDef => {
+                if (tableDef.trim()) {
+                    const lines = tableDef.trim().split('\n');
+                    const tableName = lines[0].split('(')[0].trim();
+                    const tableContent = lines.slice(1).join('<br>').trim();
+                    
+                    const tableDiv = document.createElement('div');
+                    tableDiv.className = 'table-reference';
+                    tableDiv.innerHTML = `
+                        <div class="table-name">${tableName}</div>
+                        <div class="table-schema">
+                            ${tableContent}
+                        </div>
+                        <div class="table-sample">
+                            <strong>샘플 데이터:</strong>
+                            ${createSampleTable(tableName, sampleData[tableName])}
+                        </div>
+                    `;
+                    tablesContainer.appendChild(tableDiv);
+                }
+            });
+        }
+
+        function createSampleTable(tableName, data) {
+            if (!data || data.length === 0) return '<p>No sample data available</p>';
+            
+            const headers = Object.keys(data[0]);
+            return `
+                <table class="sample-data-table">
+                    <thead>
+                        <tr>
+                            ${headers.map(h => `<th>${h}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(row => `
+                            <tr>
+                                ${headers.map(h => `<td>${row[h]}</td>`).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Load history when page loads
+        updateHistoryList();
+
+        function toggleHistory() {
+            const history = document.querySelector('.question-history');
+            const mainContent = document.querySelector('.main-content');
+            const button = document.querySelector('.history-toggle');
+            
+            history.classList.toggle('active');
+            mainContent.classList.toggle('history-active');
+            button.textContent = history.classList.contains('active') ? '<' : '>';
+        }
+
+        function toggleSchema() {
+            const schema = document.querySelector('.sample-tables');
+            const mainContent = document.querySelector('.main-content');
+            const button = document.querySelector('.schema-toggle');
+            
+            schema.classList.toggle('active');
+            mainContent.classList.toggle('schema-active');
+            button.textContent = schema.classList.contains('active') ? '>' : '<';
+        }
+
+        // Initialize sidebars as hidden
+        document.addEventListener('DOMContentLoaded', function() {
+            const history = document.querySelector('.question-history');
+            const schema = document.querySelector('.sample-tables');
+            
+            // Start with both sidebars hidden
+            history.classList.remove('active');
+            schema.classList.remove('active');
+        });
+    </script>
+</body>
+</html> 
